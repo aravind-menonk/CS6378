@@ -47,7 +47,7 @@ public class Message implements java.io.Serializable, Comparable<Message>{
             System.out.println("Received message from  " +  source + " " + message.getMessageType().toString());
             return message;
         }catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return null;
     }

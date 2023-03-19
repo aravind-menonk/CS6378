@@ -33,12 +33,13 @@ public class ClientHandler extends Thread{
 				}
 				length = input.readInt();
 			}
+			//Once the data is written to F3, release the lock so that the next thread of the other client can write to the file.
+			sem.release();
+			System.out.println("Semaphore released");
+			
 		}catch(Exception ex){
 			ex.printStackTrace();
 		}
-		//Once the data is written to F3, release the lock so that the next thread of the other client can write to the file.
-		sem.release();
-		System.out.println("Semaphore released");
 		
 		File file = new File(filePath);
 		while(file.length() < 600){

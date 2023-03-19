@@ -26,11 +26,8 @@ public class ClientThread extends Thread{
 
     @Override
 	public void run(){
-        boolean endReached = false;
         try{
-            while(!endReached){
-                try{
-                    System.out.println("Waiting for message from.." + this.clientIp);
+            while(true){
                     Message requestMessage = Message.receiveMessage(this.clientIp, server.inputStreampMap);
                     if(requestMessage.getMessageType().equals(MessageType.REQUEST)){
                         if(server.isLocked()){
@@ -59,9 +56,9 @@ public class ClientThread extends Thread{
                         if(server.lockedBy.equals(requestMessage.getSourceId())){
                             server.unlock();
                         }
-                        // Message message = Message.findRequestMessage(requestMessage, server.requestQueue);
-                        // if(message != null)
-                        //     server.requestQueue.remove(message);
+                        Message message = Message.findRequestMessage(requestMessage, server.requestQueue);
+                        if(message != null)
+                            server.requestQueue.remove(message);
                     }
 
                     if(requestMessage.getMessageType().equals(MessageType.COMPLETE)){
@@ -73,10 +70,6 @@ public class ClientThread extends Thread{
                         if(requestMessage.getSourceId().equals("10.176.69.32")){
                             System.exit(0);
                         }
-                        // while(true)
-                        //     Thread.sleep(10000);
-                        // Message message = Message.findRequestMessage(requestMessage, server.requestQueue);
-                        // server.requestQueue.remove(message);
                     }
                     
                     if(server.completionMessage == 5){
@@ -85,9 +78,7 @@ public class ClientThread extends Thread{
                         //end computation in the server
                         System.exit(0);
                     }
-                }catch(Exception eo){
-                    endReached = true;
-                }
+                
             }
         }catch(Exception e){
             //e.printStackTrace();

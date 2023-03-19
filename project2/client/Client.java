@@ -55,7 +55,7 @@ public class Client {
     }
 
     public void enterCriticalSection() throws InterruptedException{
-        for(int i = 0; i < 1; i++){
+        for(int i = 0; i < 20; i++){
             try{
                 int randomNumber = new Random().nextInt(5) + 5;
                 Thread.sleep(1000 * randomNumber);
@@ -117,12 +117,12 @@ public class Client {
         System.out.println("Opening connections...");
         openSockets(client);
         client.enterCriticalSection();
-        Thread.sleep(5000);
+        //Thread.sleep(5000);
         client.sendCompleteNotif(client.id);
-        while(true)
-            Thread.sleep(5000);
-        //System.out.println("Closing connections...");
-        //closeSockets(client);
+        // while(true)
+        //     Thread.sleep(5000);
+        System.out.println("Closing connections...");
+        closeSockets(client);
 	}
 
     public static void openSockets(Client client) throws IOException{

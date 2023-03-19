@@ -6,12 +6,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Server {
     String id;
-    private final Lock lock;
+    private boolean isLocked;
     private Map<String, Socket> serverSocketMap;
     Map<String, DataInputStream> inputStreampMap;
     Map<String, DataOutputStream> outputStreamMap;
@@ -23,10 +21,6 @@ public class Server {
 
     public String getId() {
         return id;
-    }
-
-    public Lock getLock() {
-        return lock;
     }
 
     public Map<String, Socket> getServerSocketMap() {
@@ -47,7 +41,7 @@ public class Server {
 
     public synchronized void lock(Message message) {
         System.out.println("Locking server... " + message.getSourceId());
-        lock.lock();
+        this.isLocked = true;
         this.lockedBy = message.getSourceId();
         System.out.println("Locked by ........ " + this.lockedBy);
         requestQueue.add(message);
@@ -70,14 +64,14 @@ public class Server {
             Message.sendMessage(replyMessage, clientId, this.outputStreamMap);
         } else {
             System.out.println("Request queue is empty...");
-            lock.unlock();
+            this.isLocked = false;
             this.lockedBy = null;
             System.out.println("Returning from unlocking");
         }
     }
 
     public boolean isLocked(){
-        return this.lockedBy != null;
+        return this.isLocked;
     }
 
     public Queue<Message> getRequestQueue() {
@@ -90,7 +84,7 @@ public class Server {
         this.serverSocketMap = new HashMap<>();
         this.inputStreampMap = new HashMap<>();
         this.outputStreamMap = new HashMap<>();
-        this.lock = new ReentrantLock();
+        this.isLocked = false;
         this.completionMessage = 0;
         this.serverList = new ArrayList<>();
         this.socketMap = new HashMap<>();

@@ -2,7 +2,7 @@ JC = javac
 OUTDIR = /home/012/a/ax/axk210275/D1/
 JFLAGS = -g -d $(OUTDIR)
 SOURCES = $(shell find . -type f -name '*.java')
-JVM= java
+JVM = java
 
 TXTCLIENT1 = /home/012/a/ax/axk210275/D1/client1/F3.txt
 TXTCLIENT2 = /home/012/a/ax/axk210275/D1/client2/F3.txt
