@@ -8,8 +8,7 @@ public class Message implements java.io.Serializable, Comparable<Message>{
         REQUEST,
         RELEASE,
         GRANT,
-        COMPLETE,
-        QUEUED
+        COMPLETE
     }
 
     private String sourceId;

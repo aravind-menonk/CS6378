@@ -29,13 +29,11 @@ public class ClientThread extends Thread{
         try{
             while(true){
                     Message requestMessage = Message.receiveMessage(this.clientIp, server.inputStreampMap);
+                    
                     if(requestMessage.getMessageType().equals(MessageType.REQUEST)){
                         if(server.isLocked()){
                             System.out.println("Server locked... ");
                             server.requestQueue.add(requestMessage);
-                            Message message = new Message(MessageType.QUEUED, server.id);
-                            Message.sendMessage(message, this.clientIp, server.outputStreamMap);
-                            System.out.println("Sent queued message..." + this.clientIp);
                         }else{
                             System.out.println("Server not locked... ");
                             server.lock(requestMessage);
@@ -63,11 +61,12 @@ public class ClientThread extends Thread{
 
                     if(requestMessage.getMessageType().equals(MessageType.COMPLETE)){
                         //wait until you get it from the server 0
-                        if(server.id.equals("10.176.69.32")){
+                        if(server.id.equals("10.176.69.75")){
                             server.incrementCompletionMessages();
                             System.out.println("Number of completion messages  = " + server.completionMessage);
                         }
-                        if(requestMessage.getSourceId().equals("10.176.69.32")){
+                        if(requestMessage.getSourceId().equals("10.176.69.75")){
+                            closeSockets(this.server);
                             System.exit(0);
                         }
                     }
@@ -76,12 +75,34 @@ public class ClientThread extends Thread{
                         System.out.println("Ending the computation... Sending messages to other servers");
                         server.endComputation();
                         //end computation in the server
+                        closeSockets(this.server);
                         System.exit(0);
                     }
-                
             }
         }catch(Exception e){
             //e.printStackTrace();
         }
+    }
+
+    public static void closeSockets(Server server){
+        try{
+            for(String name: server.clients){
+                closeSocket(name, server);
+            } 
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void closeSocket(String name, Server server){
+        try{
+            server.inputStreampMap.get(name).close();
+            server.outputStreamMap.get(name).close();
+            server.socketMap.get(name).close();
+            server.getServerSocketMap().get(name).close();
+            System.out.println("Closed.. " + server);
+        }catch(Exception e){
+            //do nothing
+        } 
     }
 }

@@ -35,14 +35,6 @@ public class ServerRequestTask implements Runnable {
                     System.out.println("Received grant from " + client.serverNameMap.get(serverName) + " " + serverName);
                     repliedServers.add(serverName);
                 }
-                if(m.getMessageType().equals(MessageType.QUEUED)){
-                    System.out.println("Received queued from " + client.serverNameMap.get(serverName) + " " + serverName);
-                    m = Message.receiveMessage(serverName, this.getClient().inputStreampMap);
-                    if(m.getMessageType().equals(MessageType.GRANT)){
-                        System.out.println("Received grant from " + client.serverNameMap.get(serverName) + " " + serverName);
-                        repliedServers.add(serverName);
-                    }
-                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -16,7 +16,7 @@ public class Client {
     private Map<String, Socket> socketMap;
     Map<String, DataInputStream> inputStreampMap;
     Map<String, DataOutputStream> outputStreamMap;
-    private Set<String> quorumOne;
+    private Quorums quorums;
     
     public Client(String id){
             this.id = id;
@@ -25,7 +25,7 @@ public class Client {
             serverNameMap = new HashMap<>();
             inputStreampMap = new HashMap<>();
             outputStreamMap = new HashMap<>();
-            quorumOne = new HashSet<>();
+            quorums = new Quorums();
 
             serverList.add("10.176.69.32");
             serverList.add("10.176.69.33");
@@ -40,10 +40,8 @@ public class Client {
                 sb.append("Server ").append(i + 1);
                 serverNameMap.put(serverList.get(i), sb.toString());
             }
-
-            quorumOne.add("10.176.69.32");
-            quorumOne.add("10.176.69.33");
-            quorumOne.add("10.176.69.34");
+            quorums.configureQuorums();
+            quorums.printQuorums(serverNameMap);
     }
 
     public Map<String, DataInputStream> getInputStreampMap() {
@@ -55,7 +53,7 @@ public class Client {
     }
 
     public void enterCriticalSection() throws InterruptedException{
-        for(int i = 0; i < 20; i++){
+        for(int i = 0; i < 5; i++){
             try{
                 int randomNumber = new Random().nextInt(5) + 5;
                 Thread.sleep(1000 * randomNumber);
@@ -85,7 +83,7 @@ public class Client {
         executorService.shutdown();
         try {
             while (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
-                if (repliedServers.containsAll(quorumOne)) {
+                if (quorums.checkInQuorums(repliedServers)) {
                     System.out.println("Entering..." + System.currentTimeMillis());
                     Thread.sleep(3000);
                     executorService.shutdownNow();
@@ -103,11 +101,25 @@ public class Client {
         }
     }
 
-    public void sendCompleteNotif(String id){
-        Message completeMessage = new Message(MessageType.COMPLETE, id);
-        System.out.println("Sending completion message to Server 0");
-        Message.sendMessage(completeMessage, "10.176.69.32", this.outputStreamMap);
-        //Message.receiveMessage("10.176.69.32", this.inputStreampMap);
+    public void sendCompleteNotif(Client client, String id){
+        String completionServer = "10.176.69.75";
+        Socket socket;
+        try {
+            socket = new Socket(completionServer, 5056);
+            client.socketMap.put(completionServer, socket);
+            DataInputStream input = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            client.inputStreampMap.put(completionServer, input);
+            client.outputStreamMap.put(completionServer, out);
+            System.out.println("Connected to Server 0.. " + completionServer);
+            Message completeMessage = new Message(MessageType.COMPLETE, id);
+            System.out.println("Sending completion message to Server 0");
+            Message.sendMessage(completeMessage, completionServer , this.outputStreamMap);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String args[]) throws InterruptedException, IOException{
@@ -117,10 +129,7 @@ public class Client {
         System.out.println("Opening connections...");
         openSockets(client);
         client.enterCriticalSection();
-        //Thread.sleep(5000);
-        client.sendCompleteNotif(client.id);
-        // while(true)
-        //     Thread.sleep(5000);
+        client.sendCompleteNotif(client, client.id);
         System.out.println("Closing connections...");
         closeSockets(client);
 	}

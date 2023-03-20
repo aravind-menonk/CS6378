@@ -10,6 +10,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 public class Server {
     String id;
     private boolean isLocked;
+    List<String> clients;
     private Map<String, Socket> serverSocketMap;
     Map<String, DataInputStream> inputStreampMap;
     Map<String, DataOutputStream> outputStreamMap;
@@ -39,7 +40,7 @@ public class Server {
         this.completionMessage++;
     }
 
-    public synchronized void lock(Message message) {
+    public synchronized void lock(Message message){
         System.out.println("Locking server... " + message.getSourceId());
         this.isLocked = true;
         this.lockedBy = message.getSourceId();
@@ -88,7 +89,9 @@ public class Server {
         this.completionMessage = 0;
         this.serverList = new ArrayList<>();
         this.socketMap = new HashMap<>();
+        this.clients = new ArrayList<>();
 
+        this.serverList.add("10.176.69.32");
         this.serverList.add("10.176.69.33");
         this.serverList.add("10.176.69.34");
         this.serverList.add("10.176.69.35");
@@ -97,7 +100,7 @@ public class Server {
         this.serverList.add("10.176.69.38");
     }
 
-    public void endComputation() throws InterruptedException{
+    public void endComputation(){
         //open connection from server 0 to all 6 other servers.
         int port = 5056;
         for(String otherServer: this.serverList){
@@ -106,6 +109,7 @@ public class Server {
                 socket = new Socket(otherServer, port);
                 DataInputStream input = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                this.clients.add(otherServer);
                 this.inputStreampMap.put(otherServer, input);
                 this.outputStreamMap.put(otherServer, out);
                 this.socketMap.put(otherServer, socket);
@@ -120,9 +124,6 @@ public class Server {
         for(String otherServer: this.serverList){
             Message.sendMessage(completeMessage, otherServer, this.outputStreamMap);
         }
-        Thread.sleep(5000);
-        //then stop the entire server
-        //close all connections
     }
 
     public static void main(String[] args) throws IOException{
@@ -146,6 +147,7 @@ public class Server {
 		try{
 			s = serverSocket.accept();
 			String clientIp = s.getInetAddress().getHostAddress();
+            server.clients.add(clientIp);
             System.out.println("Recieved connection : " + s);
             server.getServerSocketMap().put(clientIp, s);
 			DataInputStream input = new DataInputStream(s.getInputStream());
