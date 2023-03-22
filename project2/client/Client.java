@@ -36,7 +36,7 @@ public class Client {
             this.messagesReceived = 0;
             this.messagesSent = 0;
             this.criticalSectionAttempt = new ArrayList<>();
-            this.waitingTime = 3;
+            this.waitingTime = 5;
             this.timeInCS = 0.3;
 
             for(int i = 0; i < 20; i++){
@@ -137,7 +137,7 @@ public class Client {
                 if (quorums.checkInQuorums(repliedServers)) {
                     this.criticalSectionAttempt.get(attemptNumber).setMessagesToEnter(this.criticalSectionAttempt.get(attemptNumber).getGrantsReceived());
                     long endTime = System.currentTimeMillis();
-                    System.out.println("Entering ..." + this.clientNameMap.get(id) + " " + endTime);
+                    System.out.println("\n Entering ..." + this.clientNameMap.get(id) + " " + endTime + "\n");
                     Thread.sleep((long)(1000 * timeInCS));
                     this.criticalSectionAttempt.get(attemptNumber).setTimeElapsed(endTime - startTime);
                     executorService.shutdownNow();

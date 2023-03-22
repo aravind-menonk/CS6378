@@ -133,11 +133,11 @@ public class ClientThread extends Thread{
 
     public static void closeSocket(String name, Server server){
         try{
+            System.out.println("Closed.. " + server);
             server.inputStreampMap.get(name).close();
             server.outputStreamMap.get(name).close();
             server.socketMap.get(name).close();
             server.getServerSocketMap().get(name).close();
-            System.out.println("Closed.. " + server);
         }catch(Exception e){
             //do nothing
         } 
