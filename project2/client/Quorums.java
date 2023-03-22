@@ -33,7 +33,7 @@ public class Quorums {
             S2 S4 S6 S7 Quorum9
 
             S2 S5 S3 S7 Quorum10
-            S2 S5 S2 S6 Quorum11
+            S2 S5 S3 S6 Quorum11
             S2 S5 S6 S7 Quorum12
 
             S4 S5 S3 S6 Quorum13
@@ -194,6 +194,7 @@ public class Quorums {
         System.out.println();
     }
 
+    //returns true if any of the quorums have granted the access to the client
     public boolean checkInQuorums(Set<String> repliedServers){
         return repliedServers.containsAll(quorum1) || repliedServers.containsAll(quorum2) 
             || repliedServers.containsAll(quorum3) || repliedServers.containsAll(quorum4) || 

@@ -19,6 +19,38 @@ public class Server {
     String lockedBy;
     int completionMessage;
     List<String> serverList;
+    private int messagesSent;
+    private int messagesReceived;
+
+    public synchronized int getMessagesSent() {
+        return messagesSent;
+    }
+
+    public synchronized int getMessagesReceived() {
+        return messagesReceived;
+    }
+
+    public synchronized void incrementMessagesReceived(){
+        int mRec = this.getMessagesReceived();
+        mRec++;
+        this.setMessagesReceived(mRec);
+    }
+
+    public synchronized void incrementMessagesSent(){
+        int mSent = this.getMessagesSent();
+        mSent++;
+        this.setMessagesSent(mSent);
+    }
+
+    public synchronized void setMessagesSent(
+            int messagesSent) {
+        this.messagesSent = messagesSent;
+    }
+
+    public synchronized void setMessagesReceived(
+            int messagesReceived) {
+        this.messagesReceived = messagesReceived;
+    }
 
     public String getId() {
         return id;
@@ -44,7 +76,7 @@ public class Server {
         System.out.println("Locking server... " + message.getSourceId());
         this.isLocked = true;
         this.lockedBy = message.getSourceId();
-        System.out.println("Locked by ........ " + this.lockedBy);
+        //System.out.println("Locked by ........ " + this.lockedBy);
         requestQueue.add(message);
     }
 
@@ -63,11 +95,12 @@ public class Server {
             Message replyMessage = new Message(MessageType.GRANT, this.id);
             System.out.println("Sending grant to " + clientId);
             Message.sendMessage(replyMessage, clientId, this.outputStreamMap);
+            this.incrementMessagesSent();
         } else {
             System.out.println("Request queue is empty...");
             this.isLocked = false;
             this.lockedBy = null;
-            System.out.println("Returning from unlocking");
+            //System.out.println("Returning from unlocking");
         }
     }
 
@@ -90,7 +123,10 @@ public class Server {
         this.serverList = new ArrayList<>();
         this.socketMap = new HashMap<>();
         this.clients = new ArrayList<>();
+        this.messagesReceived = 0;
+        this.messagesSent = 0;
 
+        //List of servers to send the completion notification to from Server 0.
         this.serverList.add("10.176.69.32");
         this.serverList.add("10.176.69.33");
         this.serverList.add("10.176.69.34");
@@ -123,6 +159,7 @@ public class Server {
         System.out.println("Sending completion message to other servers");
         for(String otherServer: this.serverList){
             Message.sendMessage(completeMessage, otherServer, this.outputStreamMap);
+            //this.incrementMessagesSent();
         }
     }
 
@@ -162,6 +199,12 @@ public class Server {
 			//e.printStackTrace();
 		}
 	}
+
+    public void printStats(){
+        System.out.println();
+        System.err.println("Total number of messages sent from " + this.id + " = " + this.getMessagesSent());
+        System.err.println("Total number of messages received to " + this.id + " = " + this.getMessagesReceived());
+    }
 }
 
 

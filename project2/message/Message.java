@@ -64,10 +64,14 @@ public class Message implements java.io.Serializable, Comparable<Message>{
         }
     }
 
+    /*
+     * To delete a message from the queue if needed.
+     */
     public static Message findRequestMessage(Message releaseMessage, Queue<Message> queue){
         if(queue.isEmpty()){
             return null;
         }
+        //System.out.println("Iterating through the queue....");
         String sourceId = releaseMessage.getSourceId();
         Iterator<Message> iteratorVals = queue.iterator();
         while(iteratorVals.hasNext()){

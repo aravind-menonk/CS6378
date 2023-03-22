@@ -13,35 +13,85 @@ public class Client {
     private String id;
     private List<String> serverList;
     Map<String, String> serverNameMap;
+    Map<String, String> clientNameMap;
     private Map<String, Socket> socketMap;
     Map<String, DataInputStream> inputStreampMap;
     Map<String, DataOutputStream> outputStreamMap;
     private Quorums quorums;
+    private int messagesSent;
+    private int messagesReceived;
+    List<CriticalSectionAttempt> criticalSectionAttempt;
+    private double waitingTime;
+    private double timeInCS;
     
     public Client(String id){
             this.id = id;
-            serverList = new ArrayList<>();
-            socketMap = new HashMap<>();
-            serverNameMap = new HashMap<>();
-            inputStreampMap = new HashMap<>();
-            outputStreamMap = new HashMap<>();
-            quorums = new Quorums();
+            this.serverList = new ArrayList<>();
+            this.socketMap = new HashMap<>();
+            this.serverNameMap = new HashMap<>();
+            this.clientNameMap = new HashMap<>();
+            this.inputStreampMap = new HashMap<>();
+            this.outputStreamMap = new HashMap<>();
+            this.quorums = new Quorums();
+            this.messagesReceived = 0;
+            this.messagesSent = 0;
+            this.criticalSectionAttempt = new ArrayList<>();
+            this.waitingTime = 3;
+            this.timeInCS = 0.3;
 
-            serverList.add("10.176.69.32");
-            serverList.add("10.176.69.33");
-            serverList.add("10.176.69.34");
-            serverList.add("10.176.69.35");
-            serverList.add("10.176.69.36");
-            serverList.add("10.176.69.37");
-            serverList.add("10.176.69.38");
+            for(int i = 0; i < 20; i++){
+                this.criticalSectionAttempt.add(new CriticalSectionAttempt());
+            }
+
+            configureClientNameMap(this);
+            //List of servers 
+            this.serverList.add("10.176.69.32"); // Server 1
+            this.serverList.add("10.176.69.33"); // Server 2
+            this.serverList.add("10.176.69.34"); // Server 3
+            this.serverList.add("10.176.69.35"); // Server 4
+            this.serverList.add("10.176.69.36"); // Server 5
+            this.serverList.add("10.176.69.37"); // Server 6
+            this.serverList.add("10.176.69.38"); // Server 7
 
             for(int i = 0; i < 7; i++){
                 StringBuilder sb = new StringBuilder();
                 sb.append("Server ").append(i + 1);
-                serverNameMap.put(serverList.get(i), sb.toString());
+                this.serverNameMap.put(serverList.get(i), sb.toString());
             }
-            quorums.configureQuorums();
-            quorums.printQuorums(serverNameMap);
+
+            //Setup the quorums and print it
+            this.quorums.configureQuorums();
+            this.quorums.printQuorums(serverNameMap);
+    }
+
+    public int getMessagesSent() {
+        return messagesSent;
+    }
+
+    public void setMessagesSent(
+            int messagesSent) {
+        this.messagesSent = messagesSent;
+    }
+
+    public int getMessagesReceived() {
+        return messagesReceived;
+    }
+
+    public void setMessagesReceived(
+            int messagesReceived) {
+        this.messagesReceived = messagesReceived;
+    }
+
+    public synchronized void incrementMessagesReceived(){
+        int mRec = this.getMessagesReceived();
+        mRec++;
+        this.setMessagesReceived(mRec);
+    }
+
+    public synchronized void incrementMessagesSent(){
+        int mSent = this.getMessagesSent();
+        mSent++;
+        this.setMessagesSent(mSent);
     }
 
     public Map<String, DataInputStream> getInputStreampMap() {
@@ -53,19 +103,16 @@ public class Client {
     }
 
     public void enterCriticalSection() throws InterruptedException{
-        for(int i = 0; i < 5; i++){
+        for(int i = 0; i < 20; i++){
             try{
-                int randomNumber = new Random().nextInt(5) + 5;
-                Thread.sleep(1000 * randomNumber);
+                //int randomNumber = new Random().nextInt(5) + 5;
+                Thread.sleep((long)(1000 * waitingTime));
                 Message reqMessage = new Message(MessageType.REQUEST, id);
-                //send message to all servers
-                broadcastReqMessage(reqMessage);
-                //if we get reply
-                System.out.println("Entering..." + System.currentTimeMillis());
-                Thread.sleep(3000);
+                //send message to all servers and wait for replies
+                this.criticalSectionAttempt.get(i).setAttemptNumber(i);
+                broadcastReqMessage(reqMessage, i);
                 //send release to all servers
                 Message releaseMessage = new Message(MessageType.RELEASE, id);
-                //send message to all servers
                 broadcastRelMessage(releaseMessage);
             }catch(Exception e){
                 e.printStackTrace();
@@ -73,20 +120,28 @@ public class Client {
         }
     }
 
-    public void broadcastReqMessage(Message message){
+    /*
+     * Send requests to the servers. If all the servers in one quorum sent GRANT replies, enter the critical section.
+     */
+    public void broadcastReqMessage(Message message, int attemptNumber){
         ExecutorService executorService = Executors.newFixedThreadPool(serverList.size());
         Set<String> repliedServers = new ConcurrentSkipListSet<>();
+        long startTime = System.currentTimeMillis();
         for (String server : serverList) {
-            Runnable task = new ServerRequestTask(server, repliedServers, message, this);
+            Runnable task = new ServerRequestTask(server, repliedServers, message, this, attemptNumber);
             executorService.execute(task);
         }
         executorService.shutdown();
         try {
-            while (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
+            while (true) {
                 if (quorums.checkInQuorums(repliedServers)) {
-                    System.out.println("Entering..." + System.currentTimeMillis());
-                    Thread.sleep(3000);
+                    this.criticalSectionAttempt.get(attemptNumber).setMessagesToEnter(this.criticalSectionAttempt.get(attemptNumber).getGrantsReceived());
+                    long endTime = System.currentTimeMillis();
+                    System.out.println("Entering ..." + this.clientNameMap.get(id) + " " + endTime);
+                    Thread.sleep((long)(1000 * timeInCS));
+                    this.criticalSectionAttempt.get(attemptNumber).setTimeElapsed(endTime - startTime);
                     executorService.shutdownNow();
+                    break;
                 }
             }
         } catch (InterruptedException e) {
@@ -98,9 +153,13 @@ public class Client {
         for(String server: serverList){
             System.out.println("Sending release to " + serverNameMap.get(server) + " " + server);
             Message.sendMessage(message, server, this.outputStreamMap);
+            this.incrementMessagesSent();
         }
     }
 
+    /*
+     * Server 0 is 10.176.69.75. Start a connection with the server 0 only towards the end when it requires to.
+     */
     public void sendCompleteNotif(Client client, String id){
         String completionServer = "10.176.69.75";
         Socket socket;
@@ -115,14 +174,13 @@ public class Client {
             Message completeMessage = new Message(MessageType.COMPLETE, id);
             System.out.println("Sending completion message to Server 0");
             Message.sendMessage(completeMessage, completionServer , this.outputStreamMap);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+            //this.incrementMessagesSent();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        } 
     }
 
-    public static void main(String args[]) throws InterruptedException, IOException{
+    public static void main(String[] args) throws InterruptedException, IOException{
         String clientId = InetAddress.getLocalHost().getHostAddress();
         System.out.println("ClientId " + clientId);
         Client client = new Client(clientId);
@@ -132,6 +190,7 @@ public class Client {
         client.sendCompleteNotif(client, client.id);
         System.out.println("Closing connections...");
         closeSockets(client);
+        printStats(client);
 	}
 
     public static void openSockets(Client client) throws IOException{
@@ -158,5 +217,27 @@ public class Client {
         }catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+    /*
+     * Print the required stats.
+     */
+    public static void printStats(Client client){
+        System.out.println();
+
+        System.err.println("Total number of messages sent from " + client.id + " = " + client.getMessagesSent());
+        System.err.println("Total number of messages received by " + client.id + " = " + client.getMessagesReceived());
+
+        for(int i = 0; i < 20; i++){
+            client.criticalSectionAttempt.get(i).print();
+        }
+    }
+
+    public static void configureClientNameMap(Client client){
+        client.clientNameMap.put("10.176.69.39", "Client 1");
+        client.clientNameMap.put("10.176.69.40", "Client 2");
+        client.clientNameMap.put("10.176.69.41", "Client 3");
+        client.clientNameMap.put("10.176.69.42", "Client 4");
+        client.clientNameMap.put("10.176.69.43", "Client 5");
     }
 }
