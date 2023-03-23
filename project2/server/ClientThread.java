@@ -55,13 +55,13 @@ public class ClientThread extends Thread{
                         System.out.println("Ending the computation... Sending messages to other servers");
                         server.endComputation();
                         //end computation in the server
-                        this.server.printStats();
+                        //this.server.printStats();
                         closeSockets(this.server);
                         System.exit(0);
                     }
             }
         }catch(Exception e){
-            //e.printStackTrace();
+            //ignore
         }
     }
 
@@ -69,10 +69,7 @@ public class ClientThread extends Thread{
      * Add to the request queue if its locked. Else send grant to the client and wait for the release from the client.
      */
     public void handleRequestMessage(Message requestMessage){
-        if(server.isLocked()){
-            System.out.println("Server locked... ");
-            server.requestQueue.add(requestMessage);
-        }else{
+        if(server.tryLock()){
             System.out.println("Server not locked... ");
             server.lock(requestMessage);
             Message message = new Message(MessageType.GRANT, server.id);
@@ -84,6 +81,9 @@ public class ClientThread extends Thread{
             if(releaseMessage.getMessageType().equals(MessageType.RELEASE)){
                 handleReleaseMessage(releaseMessage);
             }
+        }else{
+            System.out.println("Server locked... ");
+            server.requestQueue.add(requestMessage);
         }
     }
 
@@ -98,7 +98,7 @@ public class ClientThread extends Thread{
             server.unlock();
         }
         // System.out.println("Finding the request message to be deleted....");
-        Message message = Message.findRequestMessage(releaseMessage, server.requestQueue);
+        Message message = Message.findRequestMessage(releaseMessage.getSourceId(), server.requestQueue);
         if(message != null){
             server.requestQueue.remove(message);
             System.out.println("Removed request from queue..." + message.getSourceId());
@@ -133,13 +133,21 @@ public class ClientThread extends Thread{
 
     public static void closeSocket(String name, Server server){
         try{
-            System.out.println("Closed.. " + server);
+            System.out.println("Closing.. " + name);
             server.inputStreampMap.get(name).close();
             server.outputStreamMap.get(name).close();
-            server.socketMap.get(name).close();
-            server.getServerSocketMap().get(name).close();
+            try{
+                server.socketMap.get(name).close();
+            }catch(Exception e){
+                //ignore
+            }
+            try{
+                server.getServerSocketMap().get(name).close();
+            }catch(Exception e){
+                //ignore
+            }
         }catch(Exception e){
-            //do nothing
+            //ignore
         } 
     }
 }

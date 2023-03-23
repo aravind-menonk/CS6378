@@ -19,8 +19,8 @@ public class Quorums {
     private Set<String> quorum14;
     private Set<String> quorum15;
 
-    /*
-         *  S1 S2 S4 Quorum1
+        /*
+            S1 S2 S4 Quorum1
             S1 S2 S5 Quorum2
             S1 S4 S5 Quorum3
 
@@ -39,6 +39,7 @@ public class Quorums {
             S4 S5 S3 S6 Quorum13
             S4 S5 S3 S7 Quorum14
             S4 S5 S6 S7 Quorum15
+            
          */
 
     public Quorums(){

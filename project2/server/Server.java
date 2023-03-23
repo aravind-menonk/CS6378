@@ -8,17 +8,17 @@ import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class Server {
-    String id;
-    private boolean isLocked;
-    List<String> clients;
-    private Map<String, Socket> serverSocketMap;
-    Map<String, DataInputStream> inputStreampMap;
-    Map<String, DataOutputStream> outputStreamMap;
-    Queue<Message> requestQueue;
-    Map<String, Socket> socketMap;
-    String lockedBy;
-    int completionMessage;
-    List<String> serverList;
+    String id; // IP of the server
+    private boolean isLocked; // state of server
+    List<String> clients; // List of clients connected
+    private Map<String, Socket> serverSocketMap; // Mapping the IP of client to the respective sockets
+    Map<String, DataInputStream> inputStreampMap; // Mapping the IP of client to the respective DataInputStream
+    Map<String, DataOutputStream> outputStreamMap; // Mapping the IP of client to the respective DataOutputStream
+    Queue<Message> requestQueue; // Request queue to maintain client requests. It is a priority blocking queue which is thread safe
+    Map<String, Socket> socketMap; // socket details for the other servers to send completion notification
+    String lockedBy; // Client IP which has currently locked the system
+    int completionMessage; // count of completion messages received so far
+    List<String> serverList; // List of servers to send the completion notif from server 0
     private int messagesSent;
     private int messagesReceived;
 
@@ -74,21 +74,29 @@ public class Server {
 
     public synchronized void lock(Message message){
         System.out.println("Locking server... " + message.getSourceId());
-        this.isLocked = true;
+        // this.isLocked = true;
         this.lockedBy = message.getSourceId();
         //System.out.println("Locked by ........ " + this.lockedBy);
         requestQueue.add(message);
     }
 
     public synchronized void unlock() {
-        requestQueue.remove();
-        System.out.println("Unlocking.....");
+        /*
+         * The one which has locked the server might not be at the top of the queue. Possible that due to
+         * network delay, another request with smaller time stamp has arrived after it has granted to a different server.
+         * Hence, we cant use requestQueue.remove() directly.
+         */
+        Message m = Message.findRequestMessage(this.lockedBy, requestQueue);
+        if(m != null){
+            requestQueue.remove(m);
+            System.out.println("Unlocking.....Removed from queue " + m.getSourceId());
+        }
         if (!requestQueue.isEmpty()) {
             System.out.println("Request queue is not empty...");
             Message message = requestQueue.peek();
             //System.out.println("Queued message source: " + message.getSourceId());
             String clientId = message.getSourceId();
-            if(isLocked()){
+            if(this.isLocked){
                 this.lockedBy = clientId;
                 System.out.println("Locked by ........ " + this.lockedBy);
             }
@@ -104,8 +112,18 @@ public class Server {
         }
     }
 
-    public boolean isLocked(){
-        return this.isLocked;
+    /*
+     * If server is unlocked, proceed to lock the server and return true.
+     * Else return false.
+     */
+    public synchronized boolean tryLock(){
+        // return this.isLocked;
+        if(this.isLocked){
+            return false;
+        }else{
+            this.isLocked = true;
+            return true;
+        }
     }
 
     public Queue<Message> getRequestQueue() {

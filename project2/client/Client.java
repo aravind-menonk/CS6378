@@ -10,19 +10,19 @@ import message.Message;
 import message.Message.MessageType;
 
 public class Client {
-    private String id;
-    private List<String> serverList;
-    Map<String, String> serverNameMap;
-    Map<String, String> clientNameMap;
-    private Map<String, Socket> socketMap;
-    Map<String, DataInputStream> inputStreampMap;
-    Map<String, DataOutputStream> outputStreamMap;
-    private Quorums quorums;
-    private int messagesSent;
+    private String id; // IP of the client
+    private List<String> serverList; // List of 7 servers
+    Map<String, String> serverNameMap; // Mapping the name of servers (like server 1, server 2 etc.) to the IP
+    Map<String, String> clientNameMap; // Mapping the name of clients to the IP
+    private Map<String, Socket> socketMap; // Mapping the IP of server to the respective sockets
+    Map<String, DataInputStream> inputStreampMap; // Mapping the IP of server to the respective DataInputStream
+    Map<String, DataOutputStream> outputStreamMap; // Mapping the IP of server to the respective DataOutputStream
+    private Quorums quorums; // Contains all the quorums needed and functions related
+    private int messagesSent; 
     private int messagesReceived;
-    List<CriticalSectionAttempt> criticalSectionAttempt;
-    private double waitingTime;
-    private double timeInCS;
+    List<CriticalSectionAttempt> criticalSectionAttempt; // Class to track the stats when the client enters the critical section
+    private double waitingTime; // Configurations to control waiting time before entering CS
+    private double timeInCS; // Configurations to control time spent in CS
     
     public Client(String id){
             this.id = id;
@@ -108,12 +108,12 @@ public class Client {
                 //int randomNumber = new Random().nextInt(5) + 5;
                 Thread.sleep((long)(1000 * waitingTime));
                 Message reqMessage = new Message(MessageType.REQUEST, id);
-                //send message to all servers and wait for replies
                 this.criticalSectionAttempt.get(i).setAttemptNumber(i);
+                //send message to all servers and wait for replies
                 broadcastReqMessage(reqMessage, i);
                 //send release to all servers
                 Message releaseMessage = new Message(MessageType.RELEASE, id);
-                broadcastRelMessage(releaseMessage);
+                broadcastRelMessage(releaseMessage, i);
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -135,12 +135,12 @@ public class Client {
         try {
             while (true) {
                 if (quorums.checkInQuorums(repliedServers)) {
+                    executorService.shutdownNow();
                     this.criticalSectionAttempt.get(attemptNumber).setMessagesToEnter(this.criticalSectionAttempt.get(attemptNumber).getGrantsReceived());
                     long endTime = System.currentTimeMillis();
-                    System.out.println("\n Entering ..." + this.clientNameMap.get(id) + " " + endTime + "\n");
+                    System.out.println("\n" + attemptNumber +". Entering ..." + this.clientNameMap.get(id) + " " + endTime + "\n");
                     Thread.sleep((long)(1000 * timeInCS));
                     this.criticalSectionAttempt.get(attemptNumber).setTimeElapsed(endTime - startTime);
-                    executorService.shutdownNow();
                     break;
                 }
             }
@@ -149,16 +149,18 @@ public class Client {
         }
     }
 
-    public void broadcastRelMessage(Message message){
+    public void broadcastRelMessage(Message message, int attemptNumber){
         for(String server: serverList){
             System.out.println("Sending release to " + serverNameMap.get(server) + " " + server);
             Message.sendMessage(message, server, this.outputStreamMap);
             this.incrementMessagesSent();
+            this.criticalSectionAttempt.get(attemptNumber).incrementRequestsSent();
         }
     }
 
     /*
-     * Server 0 is 10.176.69.75. Start a connection with the server 0 only towards the end when it requires to.
+     * Server 0 is 10.176.69.75. Start a connection with the server 0 only towards the end 
+     * when it requires to send completion notif.
      */
     public void sendCompleteNotif(Client client, String id){
         String completionServer = "10.176.69.75";

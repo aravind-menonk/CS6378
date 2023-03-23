@@ -5,8 +5,11 @@ package client;
 public class CriticalSectionAttempt {
     private int attemptNumber;
     private int requestsSent;
-    private int grantsReceived;
+    private int grantsReceived; // number of grants received in total
     private long timeElapsed;
+    /*
+     * number of grants used to enter the CS. Possible to get grants when in the CS since client hasnt sent the release messages yet.
+    */ 
     private int messagesToEnter;
 
     public CriticalSectionAttempt(){

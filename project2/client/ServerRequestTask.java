@@ -27,7 +27,7 @@ public class ServerRequestTask implements Runnable {
         @Override
         public void run() {
             // Send the request message to a server and receive the reply
-            System.out.println("Sending request to " + client.serverNameMap.get(serverName) + " "  + serverName);
+            System.out.println("Sending request to " + client.serverNameMap.get(serverName) + " "  + serverName + " " + message.getTimestamp());
             try {
                 Message.sendMessage(message, serverName, this.getClient().outputStreamMap);
                 this.client.incrementMessagesSent();
@@ -41,7 +41,7 @@ public class ServerRequestTask implements Runnable {
                     this.client.criticalSectionAttempt.get(attemptNumber).incrementGrantsRecevied();
                 }
             } catch (Exception e) {
-                //e.printStackTrace();
+                //ignore
             }
         }
     }
