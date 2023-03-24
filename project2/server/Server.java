@@ -22,34 +22,12 @@ public class Server {
     private int messagesSent;
     private int messagesReceived;
 
-    public synchronized int getMessagesSent() {
-        return messagesSent;
-    }
-
-    public synchronized int getMessagesReceived() {
-        return messagesReceived;
-    }
-
     public synchronized void incrementMessagesReceived(){
-        int mRec = this.getMessagesReceived();
-        mRec++;
-        this.setMessagesReceived(mRec);
+        this.messagesReceived++;
     }
 
     public synchronized void incrementMessagesSent(){
-        int mSent = this.getMessagesSent();
-        mSent++;
-        this.setMessagesSent(mSent);
-    }
-
-    public synchronized void setMessagesSent(
-            int messagesSent) {
-        this.messagesSent = messagesSent;
-    }
-
-    public synchronized void setMessagesReceived(
-            int messagesReceived) {
-        this.messagesReceived = messagesReceived;
+        this.messagesSent++;
     }
 
     public String getId() {
@@ -220,8 +198,8 @@ public class Server {
 
     public void printStats(){
         System.out.println();
-        System.err.println("Total number of messages sent from " + this.id + " = " + this.getMessagesSent());
-        System.err.println("Total number of messages received to " + this.id + " = " + this.getMessagesReceived());
+        System.err.println("Total number of messages sent from " + this.id + " = " + this.messagesSent);
+        System.err.println("Total number of messages received to " + this.id + " = " + this.messagesReceived);
     }
 }
 

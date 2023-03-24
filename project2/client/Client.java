@@ -64,34 +64,12 @@ public class Client {
             this.quorums.printQuorums(serverNameMap);
     }
 
-    public int getMessagesSent() {
-        return messagesSent;
-    }
-
-    public void setMessagesSent(
-            int messagesSent) {
-        this.messagesSent = messagesSent;
-    }
-
-    public int getMessagesReceived() {
-        return messagesReceived;
-    }
-
-    public void setMessagesReceived(
-            int messagesReceived) {
-        this.messagesReceived = messagesReceived;
-    }
-
     public synchronized void incrementMessagesReceived(){
-        int mRec = this.getMessagesReceived();
-        mRec++;
-        this.setMessagesReceived(mRec);
+        this.messagesReceived++;
     }
 
     public synchronized void incrementMessagesSent(){
-        int mSent = this.getMessagesSent();
-        mSent++;
-        this.setMessagesSent(mSent);
+        this.messagesSent++;
     }
 
     public Map<String, DataInputStream> getInputStreampMap() {
@@ -227,8 +205,8 @@ public class Client {
     public static void printStats(Client client){
         System.out.println();
 
-        System.err.println("Total number of messages sent from " + client.id + " = " + client.getMessagesSent());
-        System.err.println("Total number of messages received by " + client.id + " = " + client.getMessagesReceived());
+        System.err.println("Total number of messages sent from " + client.id + " = " + client.messagesSent);
+        System.err.println("Total number of messages received by " + client.id + " = " + client.messagesReceived);
 
         for(int i = 0; i < 20; i++){
             client.criticalSectionAttempt.get(i).print();

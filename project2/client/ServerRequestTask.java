@@ -34,11 +34,11 @@ public class ServerRequestTask implements Runnable {
                 this.client.criticalSectionAttempt.get(attemptNumber).incrementRequestsSent();
                 //wait for reply from the server
                 Message m = Message.receiveMessage(serverName, this.getClient().inputStreampMap);
-                this.client.incrementMessagesReceived();
                 if(m.getMessageType().equals(MessageType.GRANT)){
+                    this.client.incrementMessagesReceived();
+                    this.client.criticalSectionAttempt.get(attemptNumber).incrementGrantsRecevied();
                     System.out.println("Received grant from " + client.serverNameMap.get(serverName) + " " + serverName);
                     repliedServers.add(serverName);
-                    this.client.criticalSectionAttempt.get(attemptNumber).incrementGrantsRecevied();
                 }
             } catch (Exception e) {
                 //ignore
