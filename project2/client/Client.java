@@ -104,7 +104,6 @@ public class Client {
     public void broadcastReqMessage(Message message, int attemptNumber){
         ExecutorService executorService = Executors.newFixedThreadPool(serverList.size());
         Set<String> repliedServers = new ConcurrentSkipListSet<>();
-        long startTime = System.currentTimeMillis();
         for (String server : serverList) {
             Runnable task = new ServerRequestTask(server, repliedServers, message, this, attemptNumber);
             executorService.execute(task);
@@ -113,12 +112,13 @@ public class Client {
         try {
             while (true) {
                 if (quorums.checkInQuorums(repliedServers)) {
-                    executorService.shutdownNow();
-                    this.criticalSectionAttempt.get(attemptNumber).setMessagesToEnter(this.criticalSectionAttempt.get(attemptNumber).getGrantsReceived());
                     long endTime = System.currentTimeMillis();
+                    executorService.shutdownNow();
+                    long startTime = message.getTimestamp();
+                    this.criticalSectionAttempt.get(attemptNumber).setMessagesToEnter(this.criticalSectionAttempt.get(attemptNumber).getGrantsReceived());
+                    this.criticalSectionAttempt.get(attemptNumber).setTimeElapsed(endTime - startTime);
                     System.out.println("\n" + attemptNumber +". Entering ..." + this.clientNameMap.get(id) + " " + endTime + "\n");
                     Thread.sleep((long)(1000 * timeInCS));
-                    this.criticalSectionAttempt.get(attemptNumber).setTimeElapsed(endTime - startTime);
                     break;
                 }
             }
