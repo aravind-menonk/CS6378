@@ -202,15 +202,21 @@ public class Client {
     /*
      * Print the required stats.
      */
+    /*
+     * Print the required stats.
+     */
     public static void printStats(Client client){
         System.out.println();
 
-        System.err.println("Total number of messages sent from " + client.id + " = " + client.messagesSent);
-        System.err.println("Total number of messages received by " + client.id + " = " + client.messagesReceived);
-
+        System.out.println("Total number of messages sent from " + client.id + " = " + client.messagesSent);
+        System.out.println("Total number of messages received by " + client.id + " = " + client.messagesReceived);
+        int avg = 0;
         for(int i = 0; i < 20; i++){
             client.criticalSectionAttempt.get(i).print();
+            avg += client.criticalSectionAttempt.get(i).getTimeElapsed();
         }
+        avg /= 20;
+        System.out.println("Average time: " + avg);
     }
 
     public static void configureClientNameMap(Client client){
