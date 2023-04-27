@@ -5,15 +5,19 @@ import java.util.*;
 
 public class Message implements java.io.Serializable{
     public enum MessageType {
-        UPDATE
+        UPDATE,
+        COMMIT,
+        VOTE_REQUEST,
+        VOTE_RESPONSE,
+        ABORT
     }
 
     private String sourceId;
     private MessageType messageType;
     private ObjectX object;
 
-    public Message(String sourceId, ObjectX object){
-        this.messageType = MessageType.UPDATE;
+    public Message(MessageType type, String sourceId, ObjectX object){
+        this.messageType = type;
         this.sourceId = sourceId;
         this.object = object;
     }
@@ -58,7 +62,7 @@ public class Message implements java.io.Serializable{
             DataInputStream inputStream = inputStreampMap.get(source);
             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
             Message message = (Message) objectInputStream.readObject();
-            System.out.println("Received message from  " +  source);
+            //System.out.println("Received message from  " +  source + " " + message.getMessageType().toString());
             return message;
         }catch(Exception e){
             //Ignore

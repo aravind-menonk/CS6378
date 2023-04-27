@@ -157,7 +157,7 @@ public class Server {
             }
             closeSockets();
         }catch(Exception e){
-            //ignore
+            e.printStackTrace();
         }
     }
 
@@ -224,11 +224,11 @@ public class Server {
     public boolean canUpdate(){
         //Check if current partition size is even
         if(currPartition.size() > (object.getReplicatedUnits() / 2)){
-            System.out.println("Partition size greater than half replicated units. Proceeding to update...");
+            System.out.println("Received votes greater than half replicated units. Updating...");
             return true;
         }
         else if(currPartition.size() == (object.getReplicatedUnits() / 2) && currPartition.contains(object.getDistinguishedSite())){
-            System.out.println("Partition size equal to half replicated units, but current partition contains distinguished site. Proceeding to update...");
+            System.out.println("Received votes equal to half replicated units, but current partition contains distinguished site. Updating...");
             return true;
         }
         System.out.println("Cannot update since required criteria is not met...");
@@ -259,14 +259,14 @@ public class Server {
     }
 
     public void printObject(){
-        System.out.println("---------------------------------------------------");
+        System.out.println("------------------------------------------------");
         if(object.getDistinguishedSite() != null){
             System.out.println("VN: " + object.getVersionNumber() + " RU: " + object.getReplicatedUnits() + " DS: " + object.getDistinguishedSite());
         }
         else{
             System.out.println("VN: " + object.getVersionNumber() + " RU: " + object.getReplicatedUnits() + " DS: - ");
         }
-        System.out.println("---------------------------------------------------");
+        System.out.println("------------------------------------------------");
     }
 
     public static void main(String[] args) throws IOException, InterruptedException{

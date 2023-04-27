@@ -5,6 +5,7 @@ import java.net.*;
 import java.util.*;
 
 import message.*;
+import message.Message.MessageType;
 import networkpartitions.*;
 
 public class Client {
@@ -35,19 +36,19 @@ public class Client {
             //Send write to partition 1
             System.out.println("For partition one");
             client.sendMessagePartitionOne();
-            Thread.sleep(5000);
+            Thread.sleep(8000);
             //Send write to partition 2
             System.out.println("For partition two");
             client.sendMessagePartitionTwo();
-            Thread.sleep(5000);
+            Thread.sleep(8000);
             //Send write to partition 3
             System.out.println("For partition three");
             client.sendMessagePartitionThree();
-            Thread.sleep(5000);
+            Thread.sleep(8000);
             //Send write to partition 4
             System.out.println("For partition four");
             client.sendMessagePartitionFour();
-            Thread.sleep(5000);
+            Thread.sleep(8000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -90,25 +91,25 @@ public class Client {
      * If there is only a single server in a partition, then send the write request twice to that server.
      */
     public void sendMessagePartitionOne(){
-        Message m = new Message(id, null);
+        Message m = new Message(MessageType.UPDATE, id, null);
         List<Set<Character>> partition = networkPartitions.getPartitionOne();
         sendMessagePartition(partition, m);
     }
 
     public void sendMessagePartitionTwo(){
-        Message m = new Message(id, null);
+        Message m = new Message(MessageType.UPDATE, id, null);
         List<Set<Character>> partition = networkPartitions.getPartitionTwo();
         sendMessagePartition(partition, m);
     }
 
     public void sendMessagePartitionThree(){
-        Message m = new Message(id, null);
+        Message m = new Message(MessageType.UPDATE, id, null);
         List<Set<Character>> partition = networkPartitions.getPartitionThree();
         sendMessagePartition(partition, m);
     }
 
     public void sendMessagePartitionFour(){
-        Message m = new Message(id, null);
+        Message m = new Message(MessageType.UPDATE, id, null);
         List<Set<Character>> partition = networkPartitions.getPartitionFour();
         sendMessagePartition(partition, m);
     }
@@ -123,7 +124,7 @@ public class Client {
                     System.out.println("Sending... to " + serverName + " " + networkPartitions.getServerNameMap().get(serverName));
                     Message.sendMessage(m, networkPartitions.getServerNameMap().get(serverName), outputStreamMap);
                     try {
-                        Thread.sleep(3000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -134,7 +135,7 @@ public class Client {
                     System.out.println("Sending... to " + serverName + " " + networkPartitions.getServerNameMap().get(serverName));
                     Message.sendMessage(m, networkPartitions.getServerNameMap().get(serverName), outputStreamMap);
                     try {
-                        Thread.sleep(3000);
+                        Thread.sleep(8000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

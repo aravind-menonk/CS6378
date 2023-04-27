@@ -7,6 +7,11 @@ public class ObjectX implements java.io.Serializable {
     private int replicatedUnits;
     private Character distinguishedSite;
 
+    public ObjectX(){
+        this.distinguishedSite = null;
+        this.replicatedUnits = 0;
+        this.versionNumber = 0;
+    }
     public ObjectX(int replicatedUnits, Character distinguishedSite){
         this.versionNumber = 1;
         this.replicatedUnits = replicatedUnits;
